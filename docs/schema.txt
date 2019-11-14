@@ -1,0 +1,5 @@
+
+example query for gtfs file:
+"http://datamine.mta.info/mta_esi.php?key=4354e649c64e51e6181051af63519238&feed_id=2"
+
+one table for each object from the feed (ideally this is automatically dumped into database)

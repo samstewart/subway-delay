@@ -1,0 +1,45 @@
+The static data is info about train schedules, etc. This comes from a fixed url as a zip file. 
+
+The main piece of magic is ActiveRecord to map between the model and the database. One can get records from the backing database via RealtimeFeed.where(...).find_each do |item ... end
+
+I'm currently trying to test that the system can download the data from the MTA endpoint.
+
+The structure of the program is simple: it's a Rails app  
+1. delayed_job is a gem that replaces cron (it runs RealtimeFeed.record_observations_for_all). The RealtimeFeeds are actual objects in the database that correspond to the feed sources (not one to one mapping with the trains as can be seen by RealtimeFeedMapping).
+
+2. The methods  RealtimeFeed.record_observations_for_all and RealtimeFeed.record_observation run asynchronously to download and insert the data into the database
+
+I don't understand how the protocol buffer stuff gets mapped into the model? But that doesn't matter because all I want are the final database commands. The Python side will read that out.
+
+psql commands
+\l : lists databases
+\dt: lists tables
+\c: connects to a new database
+select version(); good command to database connection.
+
+test_app.rb sets up the bare neccesitites for running the app
+
+It's saving time in utc format
+
+There are only three realtime things we process:
+alerts
+vehicle updates (positions of trains at stations)
+stop updates (expected arrival times)
+
+vehicle updates and stop updates are closely related. 
+
+the first shippable goal is to deliver a web app that tells passengers 
+
+does the length of the queue influence delays?
+
+My goal for today is to track the position of one train on the L line (not plotted on the map)
+
+Look at the data cleaning scripts and see that realtime_trips and stop_time_updates contain enough information to find the time between each trains at each stop.
+
+
+Broad outline of how to do this:
+subproblems:
+get list of all trains on the L line at the current moment
+	The train IDs are not reliable so we need to reconstruct the movement of a train	
+how to get a list of future stops for a given train (and times of arrival)
+	how are these stored?
