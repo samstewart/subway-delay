@@ -13,8 +13,8 @@ fname = sys.argv[2]
 # todo: strip this after debugging. change to postgres default user?
 connect_url = 'postgresql://{}:{}@{}:{}/{}'.format('sams', 's414j94s', 'localhost', 5432, database)
 engine = sqlalchemy.create_engine(connect_url)
-#if we want to create the table 
-#RealtimeTrainMoved.__table__.create(engine)
+
+RealtimeTrainMoved.__table__.create(engine, checkfirst=True)
 
 Session = sessionmaker(bind=engine)
 s = Session()

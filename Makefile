@@ -40,14 +40,23 @@
 # the static data
 STATIC_DATA_FILES = calendar_dates.txt calendar.txt routes.txt shapes.txt stops.txt stop_times.txt transfers.txt trips.txt
 
+# I have no idea how they generated these. there is not a 1-1 match between train lines either
+FEED_IDS = 1 21 51 26 36 2 16 11
+REALTIME_TABLES = alerts realtime_vehicle_moved realtime_trips 
+
+export PYTHONPATH = src/auto_generated
+
 STATIC_GTFS_DATA=http://web.mta.info/developers/data/nyct/subway/google_transit.zip
 # query url to get realtime data in protocol buffer
 # make sure to set the MTA_KEY as an environment variable!
+# just for debugging
+MTA_KEY=4354e649c64e51e6181051af63519238
 GTFS_URL=http://datamine.mta.info/mta_esi.php?key=$(MTA_KEY)&feed_id=
 DATABASE=subway
 
 #################################################################################
-
+# unix timestamp
+CUR_TIME = $(shell date +%s)
 PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 BUCKET = [OPTIONAL] your-bucket-for-syncing-data (do not include 's3://')
 PROFILE = default
@@ -62,9 +71,28 @@ database:
 	# assumes that it doesn't already exist
 	createdb $(DATABASE)
 
-## note debugging use -B
+refresh_feeds: $(addprefix archive_feed/,$(FEED_IDS))
+	
+# todo: separate table creation into own command from import_events.py
+delete_realtime_tables: $(addprefix delete_table/,$(REALTIME_TABLES))
 
-# insert the downloaded static data into f
+delete_table/%:
+	psql $(DATABASE) -c "drop table if exists $* cascade"
+
+archive_feed/%: import_feed/%
+	# backup with unix timestamp
+	mv data/raw/realtime/$*.gtfs data/raw/realtime/$*_$(CUR_TIME).gtfs
+
+import_feed/%:
+	python3 src/auto_generated/import_events.py $(DATABASE) data/raw/realtime/$*.gtfs 
+
+
+## note debugging use -B
+# download the realtime feed and import it into the database
+data/raw/realtime/%.gtfs: 	
+	# need to quote the url!
+	wget --content-disposition -O $@ "$(GTFS_URL)$*"
+	
 
 # insert each of the files into the database and copy the schema to the data folder (let's Make track this target as built)
 # preq:  data/raw/static_transit/%.txt (temporarily disable for debugging)
@@ -85,12 +113,7 @@ data/raw/static_transit/%.txt: # you ask for any of the data files, triggers who
 realtime_data: $(FEED_IDS)
 	# todo: download 1.gtfs and insert all the records into the database
 
-#.PHONY: data/raw/realtime/%.gtfs
-data/raw/realtime/%.gtfs: 	
-	# the '$*' expands just the matched part for % (in this case a number)
-	# need to quote the url!
-	wget --content-disposition -O $@ "$(GTFS_URL)$*"
-		
+	
 extract_static_data: download_data
 	
 

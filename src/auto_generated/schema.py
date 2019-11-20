@@ -59,7 +59,7 @@ class RealtimeTrainMoved(Base):
 	__tablename__ = 'realtime_vehicle_moved'
 	id = Column(Integer, primary_key=True) # will be autoincrement
 	realtime_trip_id = Column(String(30), ForeignKey('realtime_trips.id'))
-	stop_id = Column(String(10), ForeignKey('stops.id'))
+	stop_id = Column(String(10), ForeignKey('stops.id'), nullable=True)
 	current_stop_sequence = Column(Integer)
 	current_status = Column(String(20))
 	last_moved_time = Column(Integer)
@@ -75,8 +75,8 @@ class Alert(Base):
 	id = Column(Integer, primary_key=True) # will be autoincrement
 	# could be one of three types of alerts (only one will be non null)
 	realtime_trip_id = Column(String(30), ForeignKey('realtime_trips.id'))
-	route_id = Column(String(5), ForeignKey('routes.id'))
-	stop_id = Column(String(10), ForeignKey('stops.id'))
+	route_id = Column(String(5), ForeignKey('routes.id'), nullable=True)
+	stop_id = Column(String(10), ForeignKey('stops.id'), nullable=True)
 	observed_at = Column(Integer)
 	message = Column(String)
 

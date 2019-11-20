@@ -19,22 +19,6 @@ Alert.__table__.create(engine,checkfirst=True)
 Session = sessionmaker(bind=engine)
 s = Session()
 
-def alerts_from_feed(entity, timestamp):
-	messages = ','.join([("%d - %s" % (i, t.text)) for (i, t) in enumerate(event.alert.header_text.translation)])
-	alerts = []
-	for informed in entity.alert.informed_entity:
-		alert = Alert(message = messages, observed_at = timestamp)
-		
-		if informed.HasField('trip'):
-			alert.realtime_trip_id = informed.trip.trip_id
-		elif informed.HasField('stop_id'):
-			alert.stop_id = informed.stop_id
-		elif informed.HasField('route_id'):
-			alert.route_id = informed.route_id
-
-		alerts.append( alert)
-
-	return alerts
 def load_feed_events(fname):
 	with open(fname, "rb") as f:
 		message = gtfs_realtime_pb2.FeedMessage()
@@ -47,7 +31,6 @@ for event in events.entity:
 	if event.HasField('alert'):
 #		print(event.alert.informed_entity)
 		for alert in alerts_from_feed(event, events.header.timestamp):
-			pass
 			# add or update the trip		
 			s.add(alert)
 
