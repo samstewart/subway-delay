@@ -1,59 +1,24 @@
 
 # seems to have trouble with python 3
-import gtfs_realtime_pb2 
-import json
-import nyct_subway_pb2 
+from schema import RealtimeTrip
 import sys
-import sqlalchemy
-import pandas as pd
-import sqlalchemy
-from sqlalchemy import text, Column, String, Integer, ForeignKey, Boolean
-from sqlalchemy.orm import relationship, sessionmaker
 
-from sqlalchemy.ext.declarative import declarative_base
-
-Base = declarative_base()
+import sqlalchemy
+from sqlalchemy.orm import sessionmaker
+import gtfs_realtime_pb2 
+import nyct_subway_pb2 
 
 
 database = sys.argv[1]
 fname = sys.argv[2]
 
-class Route(Base):
-	__tablename__ = 'routes'
-	id = Column(String(5), primary_key=True)
-	agency_id = Column(String)
-	route_short_name = Column(String)
-	route_long_name = Column(String)
-	route_desc = Column(String)
-	route_type = Column(Integer)
-	route_url = Column(Integer)
-	route_color = Column(String)
-	route_text_color = Column(String)
-	realtime_trips = relationship('RealtimeTrip')
 
-# the realtimet trip
-class RealtimeTrip(Base):
-	__tablename__ = 'realtime_trips'
-	id = Column(String(30), primary_key=True)
-	observed_at = Column(Integer)
-	start_date = Column(String(10))
-	route_id = Column(String(5),ForeignKey('routes.id'))
-	direction = Column(String(10))
-	is_assigned = Column(Boolean)
-	train_description = Column(String(30))
-	route = relationship('Route', back_populates='realtime_trips')
-	
-	def __repr__(self):
-		return  'RealtimeTrip(%s, %s)' % (self.id, self.route_id)
-	
 # todo: strip this after debugging. change to postgres default user?
 connect_url = 'postgresql://{}:{}@{}:{}/{}'.format('sams', 's414j94s', 'localhost', 5432, database)
 engine = sqlalchemy.create_engine(connect_url)
-#print(RealtimeTrip.__table__.create(engine))
+#if we want to create the table RealtimeTrip.__table__.create(engine)
 Session = sessionmaker(bind=engine)
 s = Session()
-#trip = RealtimeTrip(id = 'HI', observed_at = 1, start_date = '1', route_id = '1', direction = 'SOUTH', is_assigned = False, train_description = 'you')
-#s.add(trip)
 
 def realtime_trip_from_feed(entity, message_timestamp):
 	trip = entity.trip_update.trip
@@ -86,8 +51,8 @@ for event in events.entity:
 		else:
 			
 			s.add(feed_trip)
-#
-		s.commit()
+
+s.commit()
 ## start a transaction
 #with engine.begin() as connection:
 
