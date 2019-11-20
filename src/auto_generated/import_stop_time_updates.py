@@ -75,8 +75,19 @@ def load_feed_events(fname):
 		return message
 
 events = load_feed_events(fname)
-s.add(realtime_trip_from_feed(events.entity[0], events.header.timestamp))
-s.commit()
+for event in events.entity:
+	if event.HasField('trip_update'):
+		# add or update the trip		
+		feed_trip = realtime_trip_from_feed(event, events.header.timestamp)
+#		# do we already have such a trip then updated its observed time
+		trip = s.query(RealtimeTrip).filter_by(id=feed_trip.id).first()
+		if trip:	
+			trip.observed_at = events.header.timestamp
+		else:
+			
+			s.add(feed_trip)
+#
+		s.commit()
 ## start a transaction
 #with engine.begin() as connection:
 

@@ -38,7 +38,7 @@
 # where to find data
 
 # the static data
-STATIC_GTFS_FILES = calendar_dates.txt calendar.txt routes.txt shapes.txt stops.txt stop_times.txt transfers.txt trips.txt
+STATIC_DATA_FILES = calendar_dates.txt calendar.txt routes.txt shapes.txt stops.txt stop_times.txt transfers.txt trips.txt
 
 STATIC_GTFS_DATA=http://web.mta.info/developers/data/nyct/subway/google_transit.zip
 # query url to get realtime data in protocol buffer
@@ -58,39 +58,41 @@ PYTHON_INTERPRETER = python3
 # COMMANDS                                                                      #
 #################################################################################
 # create the database
-database_schema:
+database:
 	# assumes that it doesn't already exist
 	createdb $(DATABASE)
-	# it's a shame that we have to map manually the database schema...
-	psql $(DATABASE) -f src/data/static_schema.sql
-	psql $(DATABASE) -f src/data/realtime_schema.sql
 
-## download static data
 ## note debugging use -B
 
-# insert each of the files into the database
-data/static_transit/%.txt: 
-	echo "\copy $* FROM '$@' (FORMAT CSV, DELIMITER(','), HEADER);" 
+# insert the downloaded static data into f
 
-download_data:
-	curl -o data/static_transit.zip $(STATIC_GTFS_DATA)
+# insert each of the files into the database and copy the schema to the data folder (let's Make track this target as built)
+# preq:  data/raw/static_transit/%.txt (temporarily disable for debugging)
+data/raw/static_transit/%.sql:
+	cp src/data/static_schemas/$*.sql data/raw/static_transit
+	# create the table by using the file copied above
+	psql $(DATABASE) -f $@
+	# output the command we'll use to insert into the database
+	psql $(DATABASE) -c "\copy $* FROM 'data/raw/static_transit/$*.txt' (FORMAT CSV, DELIMITER(','), HEADER);" 
+
+data/raw/static_transit/%.txt: # you ask for any of the data files, triggers whole download
+	curl -o data/raw/static_transit.zip $(STATIC_GTFS_DATA)
+	unzip -d data/raw/static_transit data/raw/static_transit.zip 
+	# touch files so when we call make clean it doens't delete them
+	find data/raw/static_transit -type f -exec touch {} +		
+	rm data/raw/static_transit.zip
 
 realtime_data: $(FEED_IDS)
 	# todo: download 1.gtfs and insert all the records into the database
 
-    "SI" => 11
-
-.PHONY: data/raw/realtime/%.gtfs
+#.PHONY: data/raw/realtime/%.gtfs
 data/raw/realtime/%.gtfs: 	
 	# the '$*' expands just the matched part for % (in this case a number)
 	# need to quote the url!
 	wget --content-disposition -O $@ "$(GTFS_URL)$*"
 		
 extract_static_data: download_data
-	unzip -d data/static_transit data/static_transit.zip 
-	# touch files so when we call make clean it doens't delete them
-	find data/static_transit -type f -exec touch {} +		
-	rm data/static_transit.zip
+	
 
 ## Install Python Dependencies
 requirements: test_environment
@@ -105,5 +107,3 @@ data: requirements
 clean:
 	find . -type f -name "*.py[co]" -delete
 	find . -type d -name "__pycache__" -delete
-
-

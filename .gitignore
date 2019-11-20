@@ -1,6 +1,7 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+*.gtfs
 
 protoc
 protobuf-3.10.1

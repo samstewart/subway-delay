@@ -10,8 +10,7 @@ CREATE TABLE routes (
   route_type int,
   route_url text,
   route_color text,
-  route_text_color text,
-  dummy_column text
+  route_text_color text
 );
 
 
