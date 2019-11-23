@@ -1,5 +1,5 @@
 
-from schema import RealtimeTrip, RealtimeTrainMoved, Alert
+from schema import * 
 import sys
 
 import sqlalchemy
@@ -16,13 +16,33 @@ engine = sqlalchemy.create_engine(connect_url)
 
 RealtimeTrip.__table__.create(engine, checkfirst=True)
 RealtimeTrainMoved.__table__.create(engine, checkfirst=True)
+RealtimePredictedArrival.__table__.create(engine, checkfirst=True)
 Alert.__table__.create(engine, checkfirst=True)
 
 Session = sessionmaker(bind=engine)
 s = Session()
 
-def realtime_trip_from_feed(entity):
-	trip = entity.trip_update.trip
+def realtime_predicted_arrival_from_feed(trip, stop_time_update):
+	# get the properties added by nyc
+	ext = stop_time_update.Extensions[nyct_subway_pb2.nyct_stop_time_update]
+	rp = RealtimePredictedArrival(realtime_trip_id = trip.trip_id,\
+		stop_id = stop_time_update.stop_id,\
+		actual_track = ext.actual_track,\
+		scheduled_track = ext.scheduled_track)
+	if stop_time_update.HasField('departure'):
+		rp.departure_time = stop_time_update.departure.time
+	if stop_time_update.HasField('arrival'):
+		rp.arrival_time = stop_time_update.arrival.time
+	
+	return rp
+
+
+def realtime_predicted_arrivals_from_feed(entity):
+	trip = entity.trip
+	
+	return map(lambda u: realtime_predicted_arrival_from_feed(trip, u), entity.stop_time_update)
+
+def realtime_trip_from_feed(trip):
 	# get the properties added by nyc
 	ext = trip.Extensions[nyct_subway_pb2.nyct_trip_descriptor]
 	return RealtimeTrip(id = trip.trip_id,\
@@ -33,22 +53,25 @@ def realtime_trip_from_feed(entity):
 		train_description = ext.train_id)
 
 
-def alerts_from_feed(entity, timestamp):
-	messages = ','.join([("%d - %s" % (i, t.text)) for (i, t) in enumerate(event.alert.header_text.translation)])
-	alerts = []
-	for informed in entity.alert.informed_entity:
-		alert = Alert(message = messages, observed_at = timestamp)
+def alert_from_feed(feed_alert, timestamp, messages):
 		
-		if informed.HasField('trip'):
-			alert.realtime_trip_id = informed.trip.trip_id
-		elif informed.HasField('stop_id'):
-			alert.stop_id = informed.stop_id
-		elif informed.HasField('route_id'):
-			alert.route_id = informed.route_id
+	trip = create_or_update_realtime_trip(feed_alert.trip, timestamp)
 
-		alerts.append( alert)
+	alert = Alert(message = messages, observed_at = timestamp)
+	
+	if feed_alert.HasField('trip'):
+		alert.realtime_trip_id = feed_alert.trip.trip_id
+	elif feed_alert.HasField('stop_id'):
+		alert.stop_id = feed_alert.stop_id
+	elif feed_alert.HasField('route_id'):
+		alert.route_id = feed_alert.route_id
+	
+	return alert
 
-	return alerts
+def alerts_from_feed(event, timestamp):
+	messages = ','.join([("%d - %s" % (i, t.text)) for (i, t) in enumerate(event.alert.header_text.translation)])
+	
+	return map(lambda a: alert_from_feed(a, timestamp, messages), event.alert.informed_entity) 
 
 
 def vehicle_moved_from_feed(entity):
@@ -67,18 +90,18 @@ def load_feed_events(fname):
 
 		return message
 
-def create_or_update_realtime_trip(event):
+def create_or_update_realtime_trip(trip, timestamp):
 	# add or update the trip		
-	trip = s.query(RealtimeTrip).filter_by(id=event.trip.trip_id).first()
+	stored_trip = s.query(RealtimeTrip).filter_by(id=trip.trip_id).first()
 
-	if trip:	
-		trip.observed_at = timestamp 
+	if stored_trip:	
+		stored_trip.observed_at = timestamp 
 	else:
-		trip = realtime_trip_from_feed(event)
-		trip.observed_at = timestamp
-		s.add(trip)
+		stored_trip = realtime_trip_from_feed(trip)
+		stored_trip.observed_at = timestamp
+		s.add(stored_trip)
 
-	return trip	
+	return stored_trip
 	
 
 def import_feed_events(fname, s):
@@ -86,24 +109,21 @@ def import_feed_events(fname, s):
 	events = load_feed_events(fname)
 	for event in events.entity:
 		if event.HasField('vehicle'):
-			break
-			trip = create_or_update_realtime_trip(event)
+			trip = create_or_update_realtime_trip(event.vehicle.trip, events.header.timestamp)
+	
 			moved = vehicle_moved_from_feed(event)
-			moved.trip = trip
-			# is this step necessary
-			moved.realtime_trip_id = trip.id
 			s.add(moved)
 
 		elif event.HasField('alert'):
-			break
 			for alert in alerts_from_feed(event, events.header.timestamp):
 				# add or update the trip		
 				s.add(alert)
 		elif event.HasField('trip_update'):
-			print(event)
-			# todo: create realtime_predicted_arrivals object
-			break
-			trip = create_or_update_realtime_trip(event)
+			trip = create_or_update_realtime_trip(event.trip_update.trip, events.header.timestamp)
+
+			for u in realtime_predicted_arrivals_from_feed(event.trip_update):
+				s.add(u)
+
 			
 	s.commit()
 

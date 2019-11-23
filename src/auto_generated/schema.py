@@ -33,6 +33,7 @@ class RealtimeTrip(Base):
 	train_description = Column(String(30))
 
 	route = relationship('Route', back_populates='realtime_trips')
+	realtime_predicted_arrivals = relationship('RealtimePredictedArrival')
 	vehicle_moved_events = relationship('RealtimeTrainMoved')
 	alerts = relationship('Alert')
 	
@@ -53,12 +54,13 @@ class Stop(Base):
 	parent_station = Column(String) # really should be foreign key into same table but that's complicated
 
 	vehicle_updates = relationship('RealtimeTrainMoved')
+	realtime_predicted_arrivals = relationship('RealtimePredictedArrival')
 	alerts = relationship('Alert')
 	
 class RealtimeTrainMoved(Base):
 	__tablename__ = 'realtime_vehicle_moved'
 	id = Column(Integer, primary_key=True) # will be autoincrement
-	realtime_trip_id = Column(String(30), ForeignKey('realtime_trips.id'))
+	realtime_trip_id = Column(String(30), ForeignKey('realtime_trips.id'), nullable=True)
 	stop_id = Column(String(10), ForeignKey('stops.id'), nullable=True)
 	current_stop_sequence = Column(Integer)
 	current_status = Column(String(20))
@@ -70,11 +72,28 @@ class RealtimeTrainMoved(Base):
 	def __repr__(self):
 		return  'RealtimeTrainMoved(%s, %s)' % (self.id, self.realtime_trip_id)
 
+class RealtimePredictedArrival(Base):
+	__tablename__ = 'realtime_predicted_arrivals'
+	id = Column(Integer, primary_key=True) # will be autoincrement
+	realtime_trip_id = Column(String(30), ForeignKey('realtime_trips.id'), nullable=True)
+	stop_id = Column(String(10), ForeignKey('stops.id'), nullable=True)
+	arrival_time = Column(Integer)
+	departure_time = Column(Integer)
+	scheduled_track = Column(String(4))
+	actual_track = Column(String(4))
+
+	realtime_trip = relationship('RealtimeTrip', back_populates='realtime_predicted_arrivals')
+	stop = relationship('Stop', back_populates='realtime_predicted_arrivals')
+	
+	def __repr__(self):
+		return  'RealtimePredictedArrival(%s, %s)' % (self.id, self.realtime_trip_id)
+
+
 class Alert(Base):
 	__tablename__ = 'alerts'
 	id = Column(Integer, primary_key=True) # will be autoincrement
 	# could be one of three types of alerts (only one will be non null)
-	realtime_trip_id = Column(String(30), ForeignKey('realtime_trips.id'))
+	realtime_trip_id = Column(String(30), ForeignKey('realtime_trips.id'), nullable=True)
 	route_id = Column(String(5), ForeignKey('routes.id'), nullable=True)
 	stop_id = Column(String(10), ForeignKey('stops.id'), nullable=True)
 	observed_at = Column(Integer)

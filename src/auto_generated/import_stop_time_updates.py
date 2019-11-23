@@ -22,18 +22,6 @@ RealtimeTrip.__table__.create(engine, checkfirst=True)
 Session = sessionmaker(bind=engine)
 s = Session()
 
-def realtime_trip_from_feed(entity, message_timestamp):
-	trip = entity.trip_update.trip
-	# get the properties added by nyc
-	ext = trip.Extensions[nyct_subway_pb2.nyct_trip_descriptor]
-	return RealtimeTrip(id = trip.trip_id,\
-		observed_at = message_timestamp,\
-		start_date = trip.start_date,\
-		route_id = trip.route_id,\
-		direction = ext.direction,\
-		is_assigned = ext.is_assigned,\
-		train_description = ext.train_id)
-
 def load_feed_events(fname):
 	with open(fname, "rb") as f:
 		message = gtfs_realtime_pb2.FeedMessage()

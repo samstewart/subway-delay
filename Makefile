@@ -42,7 +42,7 @@ STATIC_DATA_FILES = calendar_dates.txt calendar.txt routes.txt shapes.txt stops.
 
 # I have no idea how they generated these. there is not a 1-1 match between train lines either
 FEED_IDS = 1 21 51 26 36 2 16 11
-REALTIME_TABLES = alerts realtime_vehicle_moved realtime_trips 
+REALTIME_TABLES = alerts realtime_vehicle_moved realtime_trips realtime_predicted_arrivals 
 
 export PYTHONPATH = src/auto_generated
 
@@ -82,6 +82,7 @@ delete_table/%:
 archive_feed/%: import_feed/%
 	# backup with unix timestamp
 	mv data/raw/realtime/$*.gtfs data/raw/realtime/$*_$(CUR_TIME).gtfs
+
 
 import_feed/%:
 	python3 src/auto_generated/import_events.py $(DATABASE) data/raw/realtime/$*.gtfs 
