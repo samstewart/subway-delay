@@ -3,6 +3,7 @@ from schema import *
 import sys
 
 import sqlalchemy
+from sqlalchemy import exists
 from sqlalchemy.orm import sessionmaker
 import gtfs_realtime_pb2 
 import nyct_subway_pb2 
@@ -25,10 +26,15 @@ s = Session()
 def realtime_predicted_arrival_from_feed(trip, stop_time_update):
 	# get the properties added by nyc
 	ext = stop_time_update.Extensions[nyct_subway_pb2.nyct_stop_time_update]
+	stop_id = stop_time_update.stop_id
 	rp = RealtimePredictedArrival(realtime_trip_id = trip.trip_id,\
-		stop_id = stop_time_update.stop_id,\
 		actual_track = ext.actual_track,\
 		scheduled_track = ext.scheduled_track)
+	
+	# sometimes the stops don't exist
+	if s.query(exists().where(Stop.id==stop_id)).scalar():
+		rp.stop_id = stop_id
+
 	if stop_time_update.HasField('departure'):
 		rp.departure_time = stop_time_update.departure.time
 	if stop_time_update.HasField('arrival'):
@@ -77,11 +83,17 @@ def alerts_from_feed(event, timestamp):
 def vehicle_moved_from_feed(entity):
 	vehicle = entity.vehicle
 	trip = vehicle.trip 
-	return RealtimeTrainMoved(realtime_trip_id = trip.trip_id,\
-		stop_id = vehicle.stop_id,\
+	r = RealtimeTrainMoved(realtime_trip_id = trip.trip_id,\
 		last_moved_time = vehicle.timestamp,\
 		current_stop_sequence = vehicle.current_stop_sequence,\
 		current_status = vehicle.current_status)
+
+	stop_id = vehicle.stop_id
+
+	if s.query(exists().where(Stop.id==stop_id)).scalar():
+		r.stop_id = stop_id
+	
+	return r
 
 def load_feed_events(fname):
 	with open(fname, "rb") as f:
