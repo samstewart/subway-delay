@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *.gtfs
+*.csv
 
 protoc
 protobuf-3.10.1

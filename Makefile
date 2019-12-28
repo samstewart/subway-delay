@@ -71,7 +71,8 @@ database:
 	# assumes that it doesn't already exist
 	createdb $(DATABASE)
 
-refresh_feeds: $(addprefix archive_feed/,$(FEED_IDS))
+
+
 	
 # todo: separate table creation into own command from import_events.py
 delete_realtime_tables: $(addprefix delete_table/,$(REALTIME_TABLES))
@@ -79,15 +80,20 @@ delete_realtime_tables: $(addprefix delete_table/,$(REALTIME_TABLES))
 delete_table/%:
 	psql $(DATABASE) -c "drop table if exists $* cascade"
 
-archive_feed/%: import_feed/%
-	# backup with unix timestamp
-	mv data/raw/realtime/$*.gtfs data/raw/realtime/$*_$(CUR_TIME).gtfs
 
+import_feeds: $(addprefix import_feed/,$(FEED_IDS))
 
-import_feed/%:
-	python3 src/auto_generated/import_events.py $(DATABASE) data/raw/realtime/$*.gtfs 
+# note: deletes files generated as prerequesites which is what we want
+import_feed/%: data/raw/realtime/%.gtfs
+	cp data/raw/realtime/$*.gtfs data/processed/$*_$(CUR_TIME).gtfs
 
+data/processed/%:
+	python3 src/auto_generated/import_events.py $(DATABASE) data/raw/realtime/$*
+	# if we don't crash, archive it	
+	mv data/raw/realtime/$* data/processed/
 
+import_feeds_to_database: $(addprefix data/processed/,$(notdir $(wildcard data/raw/realtime/*.gtfs)))
+			
 ## note debugging use -B
 # download the realtime feed and import it into the database
 data/raw/realtime/%.gtfs: 	

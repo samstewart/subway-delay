@@ -80,11 +80,12 @@ def alerts_from_feed(event, timestamp):
 	return map(lambda a: alert_from_feed(a, timestamp, messages), event.alert.informed_entity) 
 
 
-def vehicle_moved_from_feed(entity):
+def vehicle_moved_from_feed(entity, message_timestamp):
 	vehicle = entity.vehicle
 	trip = vehicle.trip 
 	r = RealtimeTrainMoved(realtime_trip_id = trip.trip_id,\
 		last_moved_time = vehicle.timestamp,\
+		message_timestamp = message_timestamp,\
 		current_stop_sequence = vehicle.current_stop_sequence,\
 		current_status = vehicle.current_status)
 
@@ -123,7 +124,7 @@ def import_feed_events(fname, s):
 		if event.HasField('vehicle'):
 			trip = create_or_update_realtime_trip(event.vehicle.trip, events.header.timestamp)
 	
-			moved = vehicle_moved_from_feed(event)
+			moved = vehicle_moved_from_feed(event, events.header.timestamp)
 			s.add(moved)
 
 		elif event.HasField('alert'):

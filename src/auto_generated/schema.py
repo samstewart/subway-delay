@@ -65,6 +65,7 @@ class RealtimeTrainMoved(Base):
 	current_stop_sequence = Column(Integer)
 	current_status = Column(String(20))
 	last_moved_time = Column(Integer)
+	message_timestamp = Column(Integer)
 
 	realtime_trip = relationship('RealtimeTrip', back_populates='vehicle_moved_events')
 	stop = relationship('Stop', back_populates='vehicle_updates')
