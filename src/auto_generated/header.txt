@@ -1,0 +1,2 @@
+trip_id, start_date, route_id, train_id, direction, current_stop_sequence, current_status, timestamp, stop_id, message_timestamp
+

@@ -71,8 +71,6 @@ database:
 	# assumes that it doesn't already exist
 	createdb $(DATABASE)
 
-
-
 	
 # todo: separate table creation into own command from import_events.py
 delete_realtime_tables: $(addprefix delete_table/,$(REALTIME_TABLES))
@@ -85,14 +83,23 @@ import_feeds: $(addprefix import_feed/,$(FEED_IDS))
 
 # note: deletes files generated as prerequesites which is what we want
 import_feed/%: data/raw/realtime/%.gtfs
-	cp data/raw/realtime/$*.gtfs data/processed/$*_$(CUR_TIME).gtfs
+	cp data/raw/realtime/$*.gtfs data/raw/realtime/$*_$(CUR_TIME).gtfs
 
-data/processed/%:
-	python3 src/auto_generated/import_events.py $(DATABASE) data/raw/realtime/$*
-	# if we don't crash, archive it	
-	mv data/raw/realtime/$* data/processed/
+# todo: should depend on downloaded. my dream is to bundle stuff into zip files
+# pass the number of the data feed
 
-import_feeds_to_database: $(addprefix data/processed/,$(notdir $(wildcard data/raw/realtime/*.gtfs)))
+# most elegant solution is to stream directly from download to one file (but then stopping gracefully is hard)
+# xargs is functional currying
+data/%_combined.gtfs:
+	cat data/raw/realtime/$*_*.gtfs > data/$*_combined.gtfs
+
+data/%_combined.csv: data/%_combined.gtfs
+	python3 src/auto_generated/import_vehicle_events_as_csv.py data/$*_combined.gtfs
+	
+	
+
+# one way to loop through all the gtfs files. for the moment I think it's easier just to use 'find'
+#import_feeds_to_database: $(addprefix data/processed/,$(notdir $(wildcard data/raw/realtime/*.gtfs)))
 			
 ## note debugging use -B
 # download the realtime feed and import it into the database
@@ -132,6 +139,9 @@ requirements: test_environment
 ## Make Dataset
 data: requirements
 	$(PYTHON_INTERPRETER) src/data/make_dataset.py data/raw data/processed
+
+delete_realtime_data:
+	rm data/raw/realtime/*.gtfs
 
 ## Delete all compiled Python files
 clean:
