@@ -15,12 +15,59 @@ idx = pd.IndexSlice
 
 # get a trip with at least 68 updates (that is the most number of updates we've seen)
 # fixed auto indent feature: https://github.com/ipython/ipython/issues/11257
-f = lib.load_data('data/raw/stream.csv')
+reload(lib)
+fname = 'data/raw/realtime/stream.csv'
+f = lib.load_data(fname)
 
+route = "1"
+direction = 1
+trip_ids = f.loc[idx[route, direction, :, :, :]].index.get_level_values(0).unique()
+trip_ids
+
+longest = lib.longest_trip(f, route, direction)
+
+trip_ids[1]
+
+journey = f.loc[idx['1', 1, longest, :, :]]
+journey = journey[journey.current_status != 2]
+journey = journey.sort_index(level='timestamp')
+plt.plot(journey.index.get_level_values(1), journey.stop_name)
+
+
+# can probably do sort all at once
+for i in trip_ids:
+	journey = f.loc[idx['1', 1, i, :, :]]
+	journey = journey[journey.current_status != 2]
+	journey = journey.sort_index(level='timestamp')
+	plt.plot(journey.index.get_level_values(1), journey.stop_name)
+
+journey.index.format(formatter=lambda x: x[1])
+
+plt.
+journey.index
+stops.loc['110N']
+journey.set_index('stop_id')
+longest = lib.longest_trip(f, "1", 1)
+longest
+f.head(2).index
+d = f.loc[idx['1', 1, longest, :, :]]
+plt.plot(
+d.timestamp
+d.stop_id
+plt.plot(d.timestamp, d.stop_id)
+f.head(10)
 cla()
+
+journey.index.get_level_values(1)
+
 reload(lib)
 route = "1"
 direction = 1
+
+trip_ids = f.loc[idx[route, direction, :, :, :]].index.get_level_values(0).unique()
+for i in trip_ids:
+	print(i)
+
 trip_ids = pd.unique(f.loc[idx[route, direction, :, :, :]].trip_id)
 all_stops = lib.all_stops(f, route, direction)
 fig, ax = plt.subplots()
@@ -39,5 +86,5 @@ d = pd.DataFrame(data={'x': range(5), 'y': ['s1', 's1', 's2', 's3', 's4']})
 d.y
 d.index
 d.y
-plt.plot(d.index, d.y)
-d.y.plot()
+
+plt.plot(range(5), d.y)

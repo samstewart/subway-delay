@@ -3,13 +3,14 @@ from pandas.api.types import CategoricalDtype
 idx = pd.IndexSlice
 
 def load_data(fname):
-	f = pd.read_csv(fname)
-	f.timestamp = pd.to_datetime(pd.to_numeric(f.timestamp), unit='s')
-	f.message_timestamp = pd.to_datetime(pd.to_numeric(f.message_timestamp), unit='s')
-	f = f.drop_duplicates(subset='timestamp')
-	# this is the key part of how we structure the data. There is a natural hierarchy in how we address the actual entries (which are the status updates).
-	# should we keep the columns even though they now serve as indices?
-	f.index = pd.MultiIndex.from_frame(f[['route_id', 'direction', 'trip_id', 'stop_id', 'timestamp']])
+	f = pd.read_csv(fname, parse_dates=['timestamp', 'message_timestamp'], date_parser=lambda col: pd.to_datetime(pd.to_numeric(col), unit='s'), index_col=['route_id', 'direction', 'trip_id', 'stop_id', 'timestamp'])
+
+	f = f.drop_duplicates()
+	
+	# add the stop metadata (like geoloc and name)
+	stops = pd.read_csv('data/raw/static_transit/stops.txt', index_col='stop_id')
+	f = f.join(stops) 
+
 	return f
 
 # design question: should we track parameters as input or focus on making stuff chainable and passing in the data? here we have to pass through the arguments instead of just passing the data. results in recomputing data and copying parameters. On the other hand, we need to ensure the data has a particular index (should have only three features) and this means we need to guarantee the output of trips_for_route_and_direction
