@@ -1,56 +1,27 @@
 subway-delay
 ==============================
 
-Predict subway delays in NYC
 
-Project Organization
+
+Data
 ------------
 
-    ├── LICENSE
-    ├── Makefile           <- Makefile with commands like `make data` or `make train`
-    ├── README.md          <- The top-level README for developers using this project.
-    ├── data
-    │   ├── external       <- Data from third party sources.
-    │   ├── interim        <- Intermediate data that has been transformed.
-    │   ├── processed      <- The final, canonical data sets for modeling.
-    │   └── raw            <- The original, immutable data dump.
-    │
-    ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
-    │
-    ├── models             <- Trained and serialized models, model predictions, or model summaries
-    │
-    ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-    │                         the creator's initials, and a short `-` delimited description, e.g.
-    │                         `1.0-jqp-initial-data-exploration`.
-    │
-    ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-    │
-    ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-    │   └── figures        <- Generated graphics and figures to be used in reporting
-    │
-    ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-    │                         generated with `pip freeze > requirements.txt`
-    │
-    ├── setup.py           <- makes project pip installable (pip install -e .) so src can be imported
-    ├── src                <- Source code for use in this project.
-    │   ├── __init__.py    <- Makes src a Python module
-    │   │
-    │   ├── data           <- Scripts to download or generate data
-    │   │   └── make_dataset.py
-    │   │
-    │   ├── features       <- Scripts to turn raw data into features for modeling
-    │   │   └── build_features.py
-    │   │
-    │   ├── models         <- Scripts to train models and then use trained models to make
-    │   │   │                 predictions
-    │   │   ├── predict_model.py
-    │   │   └── train_model.py
-    │   │
-    │   └── visualization  <- Scripts to create exploratory and results oriented visualizations
-    │       └── visualize.py
-    │
-    └── tox.ini            <- tox file with settings for running tox; see tox.testrun.org
+The data from the realtime feed of Bluetooth sensors is in 'data/raw/realtime/stream.csv'. This data is a summary of the data in the GTFS (Google Transit Feed Specification) file that is downloaded every thirty seconds from the server. Not all the columns are useful. Here's what the columns mean
 
+trip_id - a trip is a single train along a route. For example, the 1 line going from South Ferry to the Bronx
+start_date - kinda pointless since we have the timestamp field
+route_id - not sure what this is for / how different than route id.
+train_id - I can't figure out the difference between this and the trip ID though it has the source and destination of the train in the name. From reading another blog post, these IDs can be unreliable since they swap trains out mid route if mechanical failure, etc.
+direction - 1: north, 2: west, 3: south, 4: east 
+current_stop_sequence - cannot figure out what this means 
+current_status, 0: train is incoming, 1: train is stopped at the station, 2: train departed the previous station and is heading towards this station
+timestamp - sensor reading timestamp (in unix timestamp; see source for converting to pandas datetime)
+stop_id - unique code that is used to look up the full stop name in the data/raw/static_transit/stops.txt list of stops. This is done for you if you use src/vehicle_trajectory (see the source code section)
+message_timestamp - time we downloaded the message (in unix timestamp). this will thus be spaced thirty seconds apart
+
+Loading the Data
+------------------
+The python module src/vehicle_trajectory.py has useful methods for parsing the data. See the docs in the file for more info.
 
 --------
 

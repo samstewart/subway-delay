@@ -28,9 +28,23 @@ longest = lib.longest_trip(f, route, direction)
 
 trip_ids[1]
 
-journey = f.loc[idx['1', 1, longest, :, :]]
-journey = journey[journey.current_status != 2]
-journey = journey.sort_index(level='timestamp')
+plt.figure()
+plt.cla()
+
+trip_lengths = f.loc[idx['1', 1, :, :, :]].groupby('trip_id').size()
+
+# we need to get the correct ordering of stops from the data. the longest trip hopefully goes the whole trick and then we recover the ordering. unfortunately, we need to three stops in thr bronx 
+trip_lengths[longest]
+f = f.sort_index(level=['trip_id', 'timestamp'])
+f = f[f.current_status != 2]
+
+# want to find guy who hits the most number of stops
+f.groupby(['trip_id', 'stop_id']).size()
+
+longest
+longest2 = lib.longest_trip(f, '1', 1)
+journey = f.loc[idx['1', 1, longest2, :, :]]
+pd.unique(journey.stop_name)
 plt.plot(journey.index.get_level_values(1), journey.stop_name)
 
 
