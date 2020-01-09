@@ -78,34 +78,28 @@ delete_realtime_tables: $(addprefix delete_table/,$(REALTIME_TABLES))
 delete_table/%:
 	psql $(DATABASE) -c "drop table if exists $* cascade"
 
-
-import_feeds: $(addprefix import_feed/,$(FEED_IDS))
-
-# note: deletes files generated as prerequesites which is what we want
-import_feed/%: data/raw/realtime/%.gtfs
-	cp data/raw/realtime/$*.gtfs data/raw/realtime/$*_$(CUR_TIME).gtfs
+# I think this is better done from bash. General question is how we should handle looping when we don't know the dependency names ahead of time? I feel like Make is more like a pyramid, you need to know the end results.
+#import_feeds: $(addprefix import_feed/,$(FEED_IDS))
 
 # todo: should depend on downloaded. my dream is to bundle stuff into zip files
 # pass the number of the data feed
 
-# most elegant solution is to stream directly from download to one file (but then stopping gracefully is hard)
-# xargs is functional currying
-data/%_combined.gtfs:
-	cat data/raw/realtime/$*_*.gtfs > data/$*_combined.gtfs
+# xargs is currying for command line tools 
 
-data/%_combined.csv: data/%_combined.gtfs
-	python3 src/auto_generated/import_vehicle_events_as_csv.py data/$*_combined.gtfs
-	
-	
+#  
+data/raw/realtime/stream.csv: data/raw/realtime/stream.gtfs
+	# $< is name of first prereq (here we only have one)
+	# https://www.gnu.org/software/make/manual/html_node/Automatic-Variables.html#Automatic-Variables
+	python3 src/auto_generated/import_vehicle_events_as_csv.py $< 
 
-# one way to loop through all the gtfs files. for the moment I think it's easier just to use 'find'
-#import_feeds_to_database: $(addprefix data/processed/,$(notdir $(wildcard data/raw/realtime/*.gtfs)))
-			
-## note debugging use -B
-# download the realtime feed and import it into the database
+## note debugging use -B with make to force rebuild
+# download the realtime feed and keep appending it to a file which we will then convert via python 
+data/raw/realtime/%.gtfs: 	
 data/raw/realtime/%.gtfs: 	
 	# need to quote the url!
-	wget --content-disposition -O $@ "$(GTFS_URL)$*"
+	# remember that $@ gives full matched filename while $* gives just the '%' wildcard match 
+	# the option -O - prints download to standard out
+	wget --quiet --content-disposition -O - "$(GTFS_URL)$*" >> $@
 	
 
 # insert each of the files into the database and copy the schema to the data folder (let's Make track this target as built)
