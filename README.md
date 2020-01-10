@@ -19,9 +19,11 @@ timestamp - sensor reading timestamp (in unix timestamp; see source for converti
 stop_id - unique code that is used to look up the full stop name in the data/raw/static_transit/stops.txt list of stops. This is done for you if you use src/vehicle_trajectory (see the source code section)
 message_timestamp - time we downloaded the message (in unix timestamp). this will thus be spaced thirty seconds apart
 
+When you use the `load_data()` method in `src/vehicle_trajectory` it will automatically join the stop meta data (name, geoloc).
+
 Loading the Data
 ------------------
-The python module src/vehicle_trajectory.py has useful methods for parsing the data. See the docs in the file for more info.
+The python module `src/vehicle_trajectory.py` has useful methods for parsing the data. See the docs in the file for more info. As an example, look at `src/plot_all_longest_trips.py`
 
 --------
 
