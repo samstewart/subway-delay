@@ -1,4 +1,5 @@
 import pandas as pd
+import matplotlib.pyplot as plt
 from pandas.api.types import CategoricalDtype
 idx = pd.IndexSlice
 
@@ -8,11 +9,14 @@ def load_data(fname):
 	"""
 	f = pd.read_csv(fname, parse_dates=['timestamp', 'message_timestamp'], date_parser=lambda col: pd.to_datetime(pd.to_numeric(col), unit='s'), index_col=['route_id', 'direction', 'trip_id', 'stop_id', 'timestamp'])
 
-	f = f.drop_duplicates()
-	
+	f = f.drop_duplicates(subset='timestamp')
+
+
 	# add the stop metadata (like geoloc and name)
 	stops = pd.read_csv('data/raw/static_transit/stops.txt', index_col='stop_id')
 	f = f.join(stops) 
+
+	f = f.sort_index(level=['trip_id', 'timestamp'])
 
 	return f
 
@@ -24,7 +28,10 @@ def longest_trip(data, route, direction):
 
 def plot_trip(d, route, direction, trip_id, ax=None):
 	"""Plots a single trips as stop names against arrival time (this should plot an increasing function with dots at the sensor readings). Ignores status updates of 'departed' = 2 since unreliable"""
+	print(trip_id)
 	journey = d.loc[idx[route, direction, trip_id, :, :]]
-	journey = journey[journey.current_status != 2] # ignore those sensor readings of 'departed'
-	journey.plot(x='timestamp', y='stop_id', marker='o', markersize=2, ax=ax, legend=False)
+	journey = journey[journey.current_status != 2] # ignore the departing signals
+	plt.plot(journey.index.get_level_values(1), journey.stop_name)
+
+	#journey.plot(x='timestamp', y='stop_id', marker='o', markersize=2, ax=ax, legend=False)
 

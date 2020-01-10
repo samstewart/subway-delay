@@ -1,5 +1,7 @@
 import pandas as pd
+from time import sleep
 from matplotlib import pyplot
+import numpy as np
 import matplotlib.pyplot as plt
 import itertools
 import matplotlib.pyplot as plt
@@ -26,37 +28,89 @@ trip_ids
 
 longest = lib.longest_trip(f, route, direction)
 
-trip_ids[1]
-
 plt.figure()
 plt.cla()
 
-trip_lengths = f.loc[idx['1', 1, :, :, :]].groupby('trip_id').size()
-
-# we need to get the correct ordering of stops from the data. the longest trip hopefully goes the whole trick and then we recover the ordering. unfortunately, we need to three stops in thr bronx 
-trip_lengths[longest]
-f = f.sort_index(level=['trip_id', 'timestamp'])
 f = f[f.current_status != 2]
 
 # want to find guy who hits the most number of stops
-f.groupby(['trip_id', 'stop_id']).size()
+journey.index
+aggregate(lambda rows: rows.index.get_level_values(1).shape[0])
 
 longest
-longest2 = lib.longest_trip(f, '1', 1)
-journey = f.loc[idx['1', 1, longest2, :, :]]
-pd.unique(journey.stop_name)
-plt.plot(journey.index.get_level_values(1), journey.stop_name)
+longest = lib.longest_trip(f, '1', 1)
+f.index.get_level_values(3).
+f.index.names
+journey.index.get_level_values(0).unique().shape[0]
+f.drop
+
+# appears to be able to get longest trip (unique stops). not sure if any different than what we had before
+trip_lengths = f.loc[idx["1", 1, :, :, :]].groupby(level='trip_id').apply(lambda t: t.index.unique().get_level_values(0).shape[0])
 
 
+trip_lengths[longest]
+longest = trip_lengths.nlargest(10)
+
+trip_lengths.max()
+longest
+journey.index.get_level_values(1)
+extras = np.array(['231 St', '238 St', 'Van Cortlandt Park - 242 St'])
+extras2 = np.array(['Rector St', 'South Ferry'])
+stations = np.concatenate((extras2, stations))
+stations = np.concatenate((stations[0:2], stations[3:]))
+stations = np.concatenate((extras2, journey.stop_name.unique(), extras))
+stations
+longest = lib.longest_trip(f, "1", 1)
+
+journey = f.loc[idx["1", 1, ti1, :, :]]
+journey
+
+journey.tail(1)
+
+journey.index.get_level_values(1)
+
+stations
+pd.CategoricalDtype(stations, ordered=True)
+stations
+# can deduce this from the data
+times = pd.date_range(start='2020-01-07 00:20:00', end='2020-01-07 01:10:00', periods=len(stations))
+
+# dammit we have to convert the categorical into numerical, annoying. actually I think it was my error?
+plt.cla()
+stations
+plt.yticks(stations)
+# constant speed
+
+
+ti = ['112400_1..N03R', '112400_1..N', '120000_1..N03R']
+
+problem_id = '112400_1..N'
+f.loc[idx['1', 1, ti[1], :, :]].stop_name
+
+l = list(trip_ids.array)
+l = ti 
+
+plt.cla()
+plt.plot(times, stations, linestyle='--')
+for i in l:
+	lib.plot_trip(f, '1', 1, i)
+
+plt.legend(['baseline'] + l)
+
+
+
+plt.yticks(stations)
+
+
+reload(lib)
 # can probably do sort all at once
 for i in trip_ids:
-	journey = f.loc[idx['1', 1, i, :, :]]
-	journey = journey[journey.current_status != 2]
-	journey = journey.sort_index(level='timestamp')
-	plt.plot(journey.index.get_level_values(1), journey.stop_name)
+	lib.plot_trip(f, '1', 1, i)	
 
-journey.index.format(formatter=lambda x: x[1])
-
+ti2
+ti1
+ti2 = '114200_1..N03R'
+plt.legend(trip_ids)
 plt.
 journey.index
 stops.loc['110N']
@@ -71,6 +125,9 @@ d.stop_id
 plt.plot(d.timestamp, d.stop_id)
 f.head(10)
 cla()
+
+
+ti1 = '118150_1..N03R'
 
 journey.index.get_level_values(1)
 
