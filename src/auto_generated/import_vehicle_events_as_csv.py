@@ -1,10 +1,6 @@
 # convert the vehicle moved events to a csv files 
-from schema import * 
 import sys
 import csv
-import sqlalchemy
-from sqlalchemy import exists
-from sqlalchemy.orm import sessionmaker
 import gtfs_realtime_pb2 
 import nyct_subway_pb2 
 from os.path import splitext
@@ -12,7 +8,6 @@ from os.path import splitext
 fname = sys.argv[1]
 output_fname = splitext(fname)[0] + '.csv'
  
-print(fname + ' -> ' + output_fname)
 def load_feed_events(fname):
 	with open(fname, "rb") as f:
 		message = gtfs_realtime_pb2.FeedMessage()

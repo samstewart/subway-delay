@@ -7,7 +7,7 @@ protobuf-3.10.1
 
 # C extensions
 *.so
-
+*.zip
 # Distribution / packaging
 .Python
 env/
