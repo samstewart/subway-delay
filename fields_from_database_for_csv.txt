@@ -1,0 +1,11 @@
+vehicle.trip.tripId
+vehicle.trip.startDate
+vehicle.trip.routeId
+vehicle.trip.[nyctTripDescriptor].trainId
+vehicle.trip.[nyctTripDescriptor].direction
+vehicle.currentStopSequence
+vehicle.currentStatus
+vehicle.timestamp
+vehicle.stopId
+stop_name
+header.timestamp
