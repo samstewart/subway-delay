@@ -7,7 +7,7 @@ from os.path import splitext
 
 fname = sys.argv[1]
 output_fname = splitext(fname)[0] + '.csv'
-
+ 
 def load_feed_events(fname):
     with open(fname, "rb") as f:
         message = gtfs_realtime_pb2.FeedMessage()

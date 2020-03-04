@@ -6,17 +6,17 @@ idx = pd.IndexSlice
 def load_data(fname):
 	"""
 	Loads the bluetooth data, converts unix timestamps to propert datetimes, and attaches the stop meta data (such as stop_name and geolocation). In our current structure, choose fname = 'data/raw/realtime/stream.csv'. 
+
+	vehicle.trip.tripId,vehicle.trip.startDate,vehicle.trip.routeId,vehicle.trip.[nyctTripDescriptor].trainId,vehicle.trip.[nyctTripDescriptor].direction,vehicle.currentStopSequence,vehicle.currentStatus,vehicle.timestamp,vehicle.stopId,stop_name,header.timestamp
 	"""
-	f = pd.read_csv(fname, parse_dates=['timestamp', 'message_timestamp'], date_parser=lambda col: pd.to_datetime(pd.to_numeric(col), unit='s'), index_col=['route_id', 'direction', 'trip_id', 'stop_id', 'timestamp'])
-
-	f = f.drop_duplicates()
-
+	f = pd.read_csv(fname, parse_dates=['vehicle.timestamp', 'header.timestamp'], date_parser=lambda col: pd.to_datetime(pd.to_numeric(col), unit='s')) 
+	f = f.set_index(['vehicle.trip.routeId', 'vehicle.trip.[nyctTripDescriptor].direction', 'vehicle.trip.tripId', 'stop_name', 'vehicle.timestamp'])
+	
+	# get rid of the duplicates
+	f = f.loc[~f.index.duplicated(keep='first')]
 
 	# add the stop metadata (like geoloc and name)
-	stops = pd.read_csv('data/raw/static_transit/stops.txt', index_col='stop_id')
-	f = f.join(stops) 
-
-	f = f.sort_index(level=['trip_id', 'timestamp'])
+	f = f.sort_index(level=['vehicle.trip.tripId', 'vehicle.timestamp'])
 
 	return f
 
