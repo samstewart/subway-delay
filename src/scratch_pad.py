@@ -15,6 +15,7 @@ idx = pd.IndexSlice
 # 096700_1..N03R,20191120,1,01 1607  SFT/242,1,38,1,1574287365,101N,1574287432
 #096700_1..N03R,20191120,1,01 1607  SFT/242,1,38,1,1574287365,101N,1574287432
 
+# plot histogram of time between trains for 14th St
 reload(lib)
 d = lib.load_data('data/processed/team_data.csv')
 fourteenth_st = d.loc[idx["1", 'NORTH', :, '14 St', :], 'vehicle.currentStatus'].sort_index(level='vehicle.timestamp')
