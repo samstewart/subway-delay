@@ -7,5 +7,5 @@ vehicle.currentStopSequence
 vehicle.currentStatus
 vehicle.timestamp
 vehicle.stopId
-stop_name
+stop_name.stop_name
 header.timestamp
