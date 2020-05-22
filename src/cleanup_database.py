@@ -17,13 +17,16 @@ if __name__ == '__main__':
     #db.cleaned_gtfs.delete_many({})
     #sys.exit()
     #print(db.events.find({"vehicle": {"$exists": False}}).count())
+    # cache in memory because faster
+    stop_names = {entry['stop_id']: entry['stop_name'] for entry in db.stops.find(projection={'stop_id': True, 'stop_name': True, '_id': False})}
     t0 = time.time()
     for event in db.events.find().limit(20):
         vehicle = event['vehicle']
         trip = vehicle['trip']
-        stop_name = db.stops.find_one({"stop_id": vehicle['stopId']}, projection={'stop_name': True, '_id': False})
-        if stop_name:
-            stop_name = stop_name['stop_name']
+
+        stop_name = None
+        if vehicle['stopId'] and vehicle['stopId'] in stop_names:
+            stop_name = stop_names[vehicle['stopId']]
 
         cleaned = {
             "direction": trip['[nyctTripDescriptor]']['direction'],
