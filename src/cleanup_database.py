@@ -9,7 +9,7 @@ from pprint import pprint
 if __name__ == '__main__':
     # need tunnel from 27018 to 27017 on remote
     total = 0
-    port = 27018
+    port = 27017
     client = pymongo.MongoClient(
         f"mongodb://{os.getenv('MONGO_USER')}:{os.getenv('MONGO_PWD')}@localhost:{port}/gtfs?authSource=gtfs&readPreference=primary&ssl=false")
     db = client.gtfs
@@ -39,6 +39,7 @@ if __name__ == '__main__':
         except pymongo.errors.DuplicateKeyError:
             duplicates += 1
 
+        total += 1
         if total % 10**5 == 0:
             print(f'Total processed {total}')
     t1 = time.time()
