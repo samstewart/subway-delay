@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import pymongo
+import time
 import os
 import sys
 import datetime
@@ -16,6 +17,7 @@ if __name__ == '__main__':
     #db.cleaned_gtfs.delete_many({})
     #sys.exit()
     #print(db.events.find({"vehicle": {"$exists": False}}).count())
+    t0 = time.time()
     for event in db.events.find().limit(20):
         vehicle = event['vehicle']
         trip = vehicle['trip']
@@ -39,6 +41,8 @@ if __name__ == '__main__':
 
         if total % 10**5 == 0:
             print(f'Total processed {total}')
+    t1 = time.time()
+    print(f'Total time: {t1 - t0}')
     print(f'Duplicates: {duplicates}')
     #print(db.cleaned_gtfs.create_index([("timestamp", pymongo.DESCENDING), ("direction", pymongo.DESCENDING), ("trip_id", pymongo.DESCENDING)], unique=True))
 
