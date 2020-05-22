@@ -7,6 +7,7 @@ from pprint import pprint
 # take stuff from raw stream and make sure no duplicate entries / fix types
 if __name__ == '__main__':
     # need tunnel from 27018 to 27017 on remote
+    total = 0
     port = 27018
     client = pymongo.MongoClient(
         f"mongodb://{os.getenv('MONGO_USER')}:{os.getenv('MONGO_PWD')}@localhost:{port}/gtfs?authSource=gtfs&readPreference=primary&ssl=false")
@@ -19,7 +20,6 @@ if __name__ == '__main__':
         vehicle = event['vehicle']
         trip = vehicle['trip']
         stop_name = db.stops.find_one({"stop_id": vehicle['stopId']}, projection={'stop_name': True, '_id': False})
-        print(stop_name)
         if stop_name:
             stop_name = stop_name['stop_name']
 
@@ -37,6 +37,8 @@ if __name__ == '__main__':
         except pymongo.errors.DuplicateKeyError:
             duplicates += 1
 
+        if total % 10**5 == 0:
+            print(f'Total processed {total}')
     print(f'Duplicates: {duplicates}')
     #print(db.cleaned_gtfs.create_index([("timestamp", pymongo.DESCENDING), ("direction", pymongo.DESCENDING), ("trip_id", pymongo.DESCENDING)], unique=True))
 
