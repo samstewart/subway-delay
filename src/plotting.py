@@ -20,12 +20,4 @@ def plot_longest_trips():
     for ti in lib.longest_trips(d, route, direction, n).index:
         lib.plot_trip(d, route, direction, ti)
 
-def plot_time_between_trains():
-    d = lib.load_data('data/processed/team_data.csv')
-    fourteenth_st = d.loc[idx["1", 'NORTH', :, '14 St', :], 'vehicle.currentStatus'].sort_index(
-        level='vehicle.timestamp')
-    fourteenth_st
-    fourteenth_st = fourteenth_st[fourteenth_st == 'STOPPED_AT']
-    times = pd.Series(fourteenth_st.index.get_level_values('vehicle.timestamp')).diff()
-    diffs = times[times.notnull()] / pd.Timedelta(minutes=1)
-    diffs.hist(bins=range(0, 20, 1))
+

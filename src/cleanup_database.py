@@ -2,9 +2,9 @@
 import pymongo
 import time
 import os
-import sys
 import datetime
 from pprint import pprint
+
 # take stuff from raw stream and make sure no duplicate entries / fix types
 if __name__ == '__main__':
     # need tunnel from 27018 to 27017 on remote
@@ -20,31 +20,36 @@ if __name__ == '__main__':
     # cache in memory because faster
     stop_names = {entry['stop_id']: entry['stop_name'] for entry in db.stops.find(projection={'stop_id': True, 'stop_name': True, '_id': False})}
     t0 = time.time()
-    for event in db.events.find().limit(20):
-        vehicle = event['vehicle']
-        trip = vehicle['trip']
-
-        stop_name = None
-        if vehicle['stopId'] and vehicle['stopId'] in stop_names:
-            stop_name = stop_names[vehicle['stopId']]
-
-        cleaned = {
-            "direction": trip['[nyctTripDescriptor]']['direction'],
-            "train_id": trip['[nyctTripDescriptor]']['trainId'],
-            "status": vehicle["currentStatus"],
-            'timestamp': datetime.datetime.fromtimestamp(int(vehicle['timestamp'].strip())),
-            "stop_name": stop_name,
-            "trip_id": vehicle['trip']['tripId'],
-            "route": trip["routeId"]
-        }
+    for event in db.events.find():
         try:
-            db.cleaned_gtfs.insert_one(cleaned)
-        except pymongo.errors.DuplicateKeyError:
-            duplicates += 1
+            vehicle = event['vehicle']
+            trip = vehicle['trip']
 
-        total += 1
-        if total % 10**5 == 0:
-            print(f'Total processed {total}')
+            stop_name = None
+            if vehicle['stopId'] and vehicle['stopId'] in stop_names:
+                stop_name = stop_names[vehicle['stopId']]
+
+            cleaned = {
+                "direction": trip['[nyctTripDescriptor]']['direction'],
+                "train_id": trip['[nyctTripDescriptor]']['trainId'],
+                "status": vehicle["currentStatus"] if 'currentStatus' in vehicle else None,
+                'timestamp': datetime.datetime.fromtimestamp(int(vehicle['timestamp'].strip())),
+                "stop_name": stop_name,
+                "trip_id": vehicle['trip']['tripId'],
+                "route": trip["routeId"]
+            }
+            try:
+                db.cleaned_gtfs.insert_one(cleaned)
+            except pymongo.errors.DuplicateKeyError:
+                duplicates += 1
+
+            total += 1
+            if total % 10**6 == 0:
+                print(f'Total processed {total}')
+
+        except Exception as e:
+            print(e)
+            pprint(event)
     t1 = time.time()
     print(f'Total time: {t1 - t0}')
     print(f'Duplicates: {duplicates}')
