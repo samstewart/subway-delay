@@ -11,6 +11,7 @@ protobuf-3.10.1
 # Distribution / packaging
 .Python
 env/
+venv/
 build/
 develop-eggs/
 dist/
