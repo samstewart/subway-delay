@@ -20,10 +20,12 @@ query = {
     "route": "1",
 }
 results = db.cleaned_gtfs.find(query) \
-.sort([('train_id', pymongo.ASCENDING), ('trip_id', pymongo.ASCENDING), ('timestamp', pymongo.ASCENDING)])
+.sort([('train_id', pymongo.ASCENDING), ('timestamp', pymongo.ASCENDING)])\
+.limit(30000)
 # according to docs trip_id is unique up to (weekday, sat, sunday)
 # only the trip ID and date *together* make a unique key.
 event = results.next()
+
 
 
 # keep track of the progress
@@ -32,30 +34,38 @@ with tqdm(total=db.cleaned_gtfs.count_documents(query), desc="Trips") as p:
     trip_start_date = last_stop_time
     cur_trip = [event]
     cur_trip_id = event['trip_id']
-    cur_train_id = event['train_id']
+    cur_train_ids = [event['train_id']]
     trips = []
     for event in results:
         # start of new trip
         hour = 60 * 60
         day = hour * 24
         diff = (event['timestamp'] - last_stop_time)
-        if diff.days * day + diff.seconds > hour or cur_trip_id != event['trip_id'] or cur_train_id != event['train_id']:
+        # the first part of the train id might change
+        id1 = cur_train_ids[-1]
+        id2 = event['train_id']
+        # no delimiter means 0 or more spaces
+        num1, time1, desc1 = id1.split()
+        num2, time2, desc2 = id2.split()
+
+        if num1 != num2 and time1 == time2 and desc1 == desc2:
+            # just the 'type' of train chagned
+            cur_train_ids.append(event['train_id'])
+
+        if diff.days * day + diff.seconds > hour or time1 != time2 or desc1 != desc2:
+            # add the stop index
+            # I'm seeing some trains with train_id '242/SFT' which can't be right?
             # important that we copy!
             db.trips.insert_one({"events": cur_trip.copy(),
                                  "trip_id": cur_trip_id,
-                                 "train_id": cur_train_id,
+                                 "train_ids": cur_train_ids,
                                  # import that it has no time information
                                  "start_date": trip_start_date.replace(hour=0, minute=0, second=0,microsecond=0),
                                  "start_time": trip_start_date,
                                  "route": "1",
                                  "direction": "NORTH"})
-#            for e in cur_trip:
-#                if e['stop_name'] in route:
-#                    e['stop_index'] = route.index(e['stop_name'])
-#                else:
-#                    e['stop_index'] = -1
 
-            cur_train_id = event['train_id']
+            cur_train_ids = [event['train_id']]
             trip_start_date = event['timestamp']
             p.update(len(cur_trip))
             cur_trip_id = event['trip_id']
