@@ -61,6 +61,8 @@ pd.DataFrame(list(db.cleaned_gtfs.aggregate([
     },
     # now finally we add the origin time (won't work for things close to 23h)
     {"$addFields": {"origin_timestamp": {"$add": ["$day", "$train_info.start.total_milliseconds"]}}},
+    # fix the timestamp field by bumping forward one hour (don't know why origin_timestamp and the timestamps are off by an hour?)
+    {"$addFields": {"timestamp": {"$add": ["$timestamp", 3600000]}}},
     {"$out": "weekdays"}
     #    {"$match": {"train_desc": None}},
 
